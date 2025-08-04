@@ -1,0 +1,25 @@
+EMAIL ATTACHMENT TEST DOCUMENT
+=============================
+
+This is a test document created to demonstrate email attachment functionality 
+with the Node.js Nodemailer email sender.
+
+Document Details:
+- File Type: Plain Text
+- Purpose: Email Attachment Testing
+- Created: 2024
+- Size: Small test file
+
+Content:
+--------
+This document contains sample data that can be used to verify that email 
+attachments are working correctly in the Node.js email sender application.
+
+Features Tested:
+✅ Text file attachments
+✅ File reading from local filesystem
+✅ MIME type detection
+✅ Email delivery with attachments
+
+End of Test Document
+=================== 

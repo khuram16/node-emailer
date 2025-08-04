@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node.js Email Sender</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .status {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #dc3545;
+        }
+
+        .status-dot.connected {
+            background: #28a745;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-container {
+            margin-bottom: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .file-upload {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .file-upload.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .file-list {
+            margin-top: 10px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        .quick-actions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .quick-actions h3 {
+            margin-bottom: 15px;
+            color: #495057;
+        }
+
+        .quick-btn {
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                border-bottom: 1px solid #dee2e6;
+                border-right: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Node.js Email Sender</h1>
+            <p>Send beautiful emails with attachments using Nodemailer</p>
+        </div>
+
+        <div class="status">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Checking connection...</span>
+            </div>
+            <button class="btn btn-secondary" onclick="testConnection()">Test Connection</button>
+        </div>
+
+        <div class="content">
+            <div class="alert alert-success" id="successAlert"></div>
+            <div class="alert alert-error" id="errorAlert"></div>
+
+            <div class="quick-actions">
+                <h3>🚀 Quick Actions</h3>
+                <button class="btn btn-success quick-btn" onclick="sendTestPDF()">
+                    📎 Send Test PDF
+                </button>
+                <button class="btn btn-secondary quick-btn" onclick="fillSampleData()">
+                    📝 Fill Sample Data
+                </button>
+            </div>
+
+            <div class="tab-container">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('simple')">Simple Email</button>
+                    <button class="tab" onclick="switchTab('html')">HTML Email</button>
+                    <button class="tab" onclick="switchTab('attachments')">With Attachments</button>
+                </div>
+
+                <!-- Simple Email Tab -->
+                <div class="tab-content active" id="simple-tab">
+                    <form id="simpleEmailForm" onsubmit="sendSimpleEmail(event)">
+                        <div class="form-group">
+                            <label for="simpleTo">To:</label>
+                            <input type="email" id="simpleTo" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="simpleSubject">Subject:</label>
+                            <input type="text" id="simpleSubject" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="simpleText">Message:</label>
+                            <textarea id="simpleText" class="form-control" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            📧 Send Email
+                        </button>
+                    </form>
+                </div>
+
+                <!-- HTML Email Tab -->
+                <div class="tab-content" id="html-tab">
+                    <form id="htmlEmailForm" onsubmit="sendHtmlEmail(event)">
+                        <div class="form-group">
+                            <label for="htmlTo">To:</label>
+                            <input type="email" id="htmlTo" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="htmlSubject">Subject:</label>
+                            <input type="text" id="htmlSubject" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="htmlText">Plain Text (fallback):</label>
+                            <textarea id="htmlText" class="form-control"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="htmlContent">HTML Content:</label>
+                            <textarea id="htmlContent" class="form-control" style="min-height: 200px;" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            🎨 Send HTML Email
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Attachments Tab -->
+                <div class="tab-content" id="attachments-tab">
+                    <form id="attachmentEmailForm" onsubmit="sendEmailWithAttachments(event)">
+                        <div class="form-group">
+                            <label for="attachTo">To:</label>
+                            <input type="email" id="attachTo" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="attachSubject">Subject:</label>
+                            <input type="text" id="attachSubject" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="attachText">Message:</label>
+                            <textarea id="attachText" class="form-control" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Attachments (Max 5 files, 10MB each):</label>
+                            <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                                <p>📎 Click to select files or drag and drop</p>
+                                <p style="font-size: 14px; color: #6c757d;">Supported: PDF, DOC, TXT, Images, etc.</p>
+                                <input type="file" id="fileInput" multiple style="display: none;">
+                            </div>
+                            <div class="file-list" id="fileList"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            📎 Send Email with Attachments
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+
+        // Check connection on page load
+        window.onload = function() {
+            testConnection();
+        };
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Test SMTP connection
+        async function testConnection() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.textContent = 'Testing connection...';
+            statusDot.classList.remove('connected');
+
+            try {
+                const response = await fetch('/api/test-connection');
+                const result = await response.json();
+
+                if (result.success) {
+                    statusDot.classList.add('connected');
+                    statusText.textContent = 'SMTP Connected ✅';
+                } else {
+                    statusText.textContent = 'SMTP Connection Failed ❌';
+                }
+            } catch (error) {
+                statusText.textContent = 'Connection Error ❌';
+            }
+        }
+
+        // Send simple email
+        async function sendSimpleEmail(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            const emailData = {
+                to: document.getElementById('simpleTo').value,
+                subject: document.getElementById('simpleSubject').value,
+                text: document.getElementById('simpleText').value
+            };
+
+            await sendEmailRequest('/api/send-email', emailData, form);
+        }
+
+        // Send HTML email
+        async function sendHtmlEmail(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            
+            const emailData = {
+                to: document.getElementById('htmlTo').value,
+                subject: document.getElementById('htmlSubject').value,
+                text: document.getElementById('htmlText').value,
+                html: document.getElementById('htmlContent').value
+            };
+
+            await sendEmailRequest('/api/send-email', emailData, form);
+        }
+
+        // Send email with attachments
+        async function sendEmailWithAttachments(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData();
+            
+            formData.append('to', document.getElementById('attachTo').value);
+            formData.append('subject', document.getElementById('attachSubject').value);
+            formData.append('text', document.getElementById('attachText').value);
+            
+            selectedFiles.forEach(file => {
+                formData.append('attachments', file);
+            });
+
+            await sendEmailRequest('/api/send-email-with-attachments', formData, form, true);
+        }
+
+        // Generic email sending function
+        async function sendEmailRequest(url, data, form, isFormData = false) {
+            form.classList.add('loading');
+            hideAlerts();
+
+            try {
+                const options = {
+                    method: 'POST',
+                };
+
+                if (isFormData) {
+                    options.body = data;
+                } else {
+                    options.headers = {
+                        'Content-Type': 'application/json',
+                    };
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(url, options);
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', `✅ ${result.message} (ID: ${result.messageId})`);
+                    form.reset();
+                    selectedFiles = [];
+                    updateFileList();
+                } else {
+                    showAlert('error', `❌ ${result.message}`);
+                }
+            } catch (error) {
+                showAlert('error', `❌ Network error: ${error.message}`);
+            }
+
+            form.classList.remove('loading');
+        }
+
+        // Send test PDF
+        async function sendTestPDF() {
+            const to = prompt('Enter recipient email:');
+            if (!to) return;
+
+            hideAlerts();
+
+            try {
+                const response = await fetch('/api/send-test-pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ to })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', `✅ ${result.message} (ID: ${result.messageId})`);
+                } else {
+                    showAlert('error', `❌ ${result.message}`);
+                }
+            } catch (error) {
+                showAlert('error', `❌ Network error: ${error.message}`);
+            }
+        }
+
+        // Fill sample data
+        function fillSampleData() {
+            document.getElementById('simpleTo').value = 'black.arrow.app@gmail.com';
+            document.getElementById('simpleSubject').value = 'Test Email from Web UI';
+            document.getElementById('simpleText').value = 'Hello! This is a test email sent from the Node.js Email Sender web interface.';
+
+            document.getElementById('htmlTo').value = 'black.arrow.app@gmail.com';
+            document.getElementById('htmlSubject').value = 'Beautiful HTML Email';
+            document.getElementById('htmlText').value = 'This is the plain text version.';
+            document.getElementById('htmlContent').value = `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h1 style="color: #667eea;">🎉 Welcome!</h1>
+    <p>This is a <strong>beautiful HTML email</strong> sent from the web interface.</p>
+    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
+        <h3>Features:</h3>
+        <ul>
+            <li>✅ HTML formatting</li>
+            <li>✅ Custom styling</li>
+            <li>✅ Web interface</li>
+        </ul>
+    </div>
+    <p>Best regards,<br>Your Email Sender</p>
+</div>`;
+
+            document.getElementById('attachTo').value = 'black.arrow.app@gmail.com';
+            document.getElementById('attachSubject').value = 'Email with Attachments';
+            document.getElementById('attachText').value = 'Please find the attached files.';
+        }
+
+        // File handling
+        const fileInput = document.getElementById('fileInput');
+        const fileUpload = document.querySelector('.file-upload');
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            handleFileSelect({ target: { files: e.dataTransfer.files } });
+        });
+
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            selectedFiles = [...selectedFiles, ...files].slice(0, 5); // Max 5 files
+            updateFileList();
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span>📎 ${file.name} (${(file.size / 1024).toFixed(1)} KB)</span>
+                    <button type="button" onclick="removeFile(${index})" style="background: none; border: none; color: #dc3545; cursor: pointer;">✕</button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        }
+
+        // Alert functions
+        function showAlert(type, message) {
+            hideAlerts();
+            const alert = document.getElementById(type === 'success' ? 'successAlert' : 'errorAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 5000);
+        }
+
+        function hideAlerts() {
+            document.getElementById('successAlert').style.display = 'none';
+            document.getElementById('errorAlert').style.display = 'none';
+        }
+    </script>
+</body>
+</html> 
