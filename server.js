@@ -2,10 +2,11 @@ const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const cors = require("cors");
 const EmailSender = require("./emailSender");
 
 const app = express();
-const PORT = 3000;
+const PORT = 3030;
 
 // Initialize email sender
 const emailSender = new EmailSender();
@@ -36,6 +37,14 @@ const upload = multer({
 });
 
 // Middleware
+app.use(
+  cors({
+    origin: ["http://localhost:3001", "http://localhost:3000"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  })
+); // Enable CORS for React client
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
@@ -185,13 +194,51 @@ app.post("/api/send-test-pdf", async (req, res) => {
       });
     }
 
-    const result = await emailSender.testAttachmentEmail(to, "./test.pdf");
+    // Use custom subject and text if provided, otherwise use default from testAttachmentEmail
+    if (subject && text) {
+      // Send custom email with test.pdf attached
+      const result = await emailSender.sendEmail({
+        to,
+        subject,
+        text,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #667eea;">📎 Email with test.pdf Attachment</h2>
+            <p>${text.replace(/\n/g, "<br>")}</p>
+            <div style="background-color: #f0f8ff; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #667eea;">
+              <h3 style="margin-top: 0; color: #667eea;">✅ Attachment Information:</h3>
+              <ul>
+                <li>📄 File: test.pdf</li>
+                <li>🚀 Sent from: React Email Client</li>
+                <li>✅ Status: Successfully attached</li>
+              </ul>
+            </div>
+            <p>Best regards,<br><strong>React Email Client</strong></p>
+          </div>
+        `,
+        attachments: [
+          {
+            filename: "test.pdf",
+            path: "./test.pdf",
+          },
+        ],
+      });
 
-    res.json({
-      success: true,
-      message: "Test PDF email sent successfully",
-      messageId: result.messageId,
-    });
+      res.json({
+        success: true,
+        message: "Custom email with test.pdf sent successfully",
+        messageId: result.messageId,
+      });
+    } else {
+      // Use the default testAttachmentEmail method
+      const result = await emailSender.testAttachmentEmail(to, "./test.pdf");
+
+      res.json({
+        success: true,
+        message: "Test PDF email sent successfully",
+        messageId: result.messageId,
+      });
+    }
   } catch (error) {
     res.status(500).json({
       success: false,
